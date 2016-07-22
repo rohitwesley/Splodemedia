@@ -19,6 +19,7 @@ android {
     }
 }
 
+//Comment this line wneh asked
 repositories {
     maven {
         url 'https://dl.bintray.com/rohitwesley/maven/'
