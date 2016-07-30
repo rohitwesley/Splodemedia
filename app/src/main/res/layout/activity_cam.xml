@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.tecrt.rowest.tecrtmedia.CamActivity">
+    tools:context="com.tecrt.rowest.splodemedia.CamActivity">
 
     <com.tecrt.rowest.tecrtmedialib.CameraGLView
         android:id="@+id/cameraView"

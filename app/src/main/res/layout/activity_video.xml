@@ -3,36 +3,47 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.tecrt.rowest.tecrtmedia.VideoActivity">
+    tools:context="com.tecrt.rowest.splodemedia.VideoActivity">
 
     <com.tecrt.rowest.tecrtmedialib.VideoGLView
         android:id="@+id/cameraView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_centerInParent="true" />
+        android:layout_centerInParent="true"
+        android:background="@color/colorTrans" />
 
     <RelativeLayout
+        android:id="@+id/UILayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_gravity="center"
-        android:id="@+id/UILayout">
-
-        <ImageButton
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:id="@+id/button_menu"
-            android:src="@drawable/abc_ic_menu_overflow_material"
-            android:background="@color/colorTrans"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentBottom="false"
-            android:layout_alignParentLeft="true" />
+        android:layout_gravity="center">
 
         <TextView
+            android:id="@+id/myTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            android:layout_gravity="center|top"
+            android:text="hello_world"
+            android:visibility="invisible" />
+
+        <ImageButton
+            android:id="@+id/button_menu"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_alignParentBottom="false"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true"
+            android:background="@color/colorTrans"
+            android:src="@drawable/abc_ic_menu_overflow_material" />
+
+        <TextView
+            android:id="@+id/info"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="New Text"
-            android:id="@+id/info"
             android:layout_centerInParent="true"
+            android:text="New Text"
             android:visibility="gone" />
 
         <Spinner
@@ -45,8 +56,8 @@
             android:id="@+id/textView1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
             android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true"
             android:text="You can change scale mode with touching screen."
             android:textColor="#ffff0000"
             android:visibility="invisible" />
@@ -62,81 +73,81 @@
             android:visibility="invisible" />
 
         <LinearLayout
-            android:orientation="horizontal"
+            android:id="@+id/layout_menu"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/layout_menu"
-            android:padding="10dp"
             android:layout_alignParentTop="true"
-            android:layout_centerInParent="true">
+            android:layout_centerInParent="true"
+            android:orientation="horizontal"
+            android:padding="10dp">
 
             <ImageButton
-                android:layout_width="50dp"
-                android:layout_height="50dp"
                 android:id="@+id/button_camera_video"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:background="@color/colorTrans"
                 android:src="@android:drawable/ic_menu_camera"
-                android:visibility="invisible"
-                android:background="@color/colorTrans" />
+                android:visibility="invisible" />
 
             <ImageButton
-                android:layout_width="50dp"
-                android:layout_height="50dp"
                 android:id="@+id/button_adjust"
-                android:src="@mipmap/id_adjustment"
-                android:background="@color/colorTrans" />
-
-            <ImageButton
                 android:layout_width="50dp"
                 android:layout_height="50dp"
+                android:background="@color/colorTrans"
+                android:src="@mipmap/id_adjustment" />
+
+            <ImageButton
                 android:id="@+id/button_filters"
-                android:src="@mipmap/ic_filters"
-                android:background="@color/colorTrans" />
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:background="@color/colorTrans"
+                android:src="@mipmap/ic_filters" />
 
         </LinearLayout>
 
         <LinearLayout
-            android:orientation="vertical"
+            android:id="@+id/layout_menuVideo"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentRight="true"
             android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
             android:layout_alignParentTop="true"
             android:gravity="center"
-            android:id="@+id/layout_menuVideo"
+            android:orientation="vertical"
             android:padding="10dp">
 
             <ImageButton
+                android:id="@+id/button_add"
                 android:layout_width="50dp"
                 android:layout_height="50dp"
-                android:id="@+id/button_add"
                 android:background="@color/colorTrans"
                 android:src="@mipmap/ic_add" />
 
             <ImageButton
+                android:id="@+id/button_reset"
                 android:layout_width="50dp"
                 android:layout_height="50dp"
-                android:id="@+id/button_reset"
                 android:background="@color/colorTrans"
                 android:src="@mipmap/ic_playback" />
 
             <ImageButton
+                android:id="@+id/button_play_pause"
                 android:layout_width="50dp"
                 android:layout_height="50dp"
-                android:id="@+id/button_play_pause"
                 android:background="@color/colorTrans"
                 android:src="@mipmap/ic_pause" />
 
             <ImageButton
+                android:id="@+id/button_stop_rec"
                 android:layout_width="50dp"
                 android:layout_height="50dp"
-                android:id="@+id/button_stop_rec"
                 android:background="@color/colorTrans"
                 android:src="@mipmap/ic_save" />
 
             <ImageButton
+                android:id="@+id/button_upload"
                 android:layout_width="50dp"
                 android:layout_height="50dp"
-                android:id="@+id/button_upload"
                 android:background="@color/colorTrans"
                 android:src="@mipmap/ic_upload" />
 
@@ -164,13 +175,13 @@
         </LinearLayout>
 
         <HorizontalScrollView
+            android:id="@+id/layout_filters"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/layout_filters"
-            android:fillViewport="true"
             android:layout_alignParentBottom="true"
             android:layout_centerInParent="true"
             android:layout_toLeftOf="@+id/layout_menuVideo"
+            android:fillViewport="true"
             android:padding="10dp">
 
             <RelativeLayout
@@ -180,242 +191,242 @@
                 android:padding="10dp">
 
                 <LinearLayout
-                    android:orientation="vertical"
+                    android:id="@+id/nonefilter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:id="@+id/nonefilter"
-                    android:gravity="center">
+                    android:gravity="center"
+                    android:orientation="vertical">
 
                     <TextView
                         android:id="@+id/text_none"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/filter_none"
-                        android:textSize="8sp"/>
+                        android:textSize="8sp" />
 
                     <ImageButton
+                        android:id="@+id/filter_none"
                         android:layout_width="50dp"
                         android:layout_height="50dp"
-                        android:id="@+id/filter_none"
-                        android:src="@mipmap/ic_launcher"
+                        android:background="@color/colorTrans"
                         android:scaleType="fitCenter"
-                        android:background="@color/colorTrans" />
+                        android:src="@mipmap/ic_launcher" />
                 </LinearLayout>
 
                 <LinearLayout
-                    android:orientation="vertical"
+                    android:id="@+id/bnwfilter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:id="@+id/bnwfilter"
                     android:layout_toRightOf="@+id/nonefilter"
-                    android:gravity="center">
+                    android:gravity="center"
+                    android:orientation="vertical">
 
                     <TextView
                         android:id="@+id/text_bnw"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/filter_bnw"
-                        android:textSize="8sp"/>
+                        android:textSize="8sp" />
 
                     <ImageButton
+                        android:id="@+id/filter_bnw"
                         android:layout_width="50dp"
                         android:layout_height="50dp"
-                        android:id="@+id/filter_bnw"
-                        android:src="@drawable/bnw"
+                        android:background="@color/colorTrans"
                         android:scaleType="fitCenter"
-                        android:background="@color/colorTrans" />
+                        android:src="@drawable/bnw" />
                 </LinearLayout>
 
                 <LinearLayout
-                    android:orientation="vertical"
+                    android:id="@+id/Anselfilter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:id="@+id/Anselfilter"
                     android:layout_toRightOf="@+id/bnwfilter"
-                    android:gravity="center">
+                    android:gravity="center"
+                    android:orientation="vertical">
 
                     <TextView
                         android:id="@+id/text_Ansel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/filter_Ansel"
-                        android:textSize="8sp"/>
+                        android:textSize="8sp" />
 
                     <ImageButton
+                        android:id="@+id/filter_Ansel"
                         android:layout_width="50dp"
                         android:layout_height="50dp"
-                        android:id="@+id/filter_Ansel"
-                        android:src="@drawable/ansel"
+                        android:background="@color/colorTrans"
                         android:scaleType="fitCenter"
-                        android:background="@color/colorTrans" />
+                        android:src="@drawable/ansel" />
                 </LinearLayout>
 
                 <LinearLayout
-                    android:orientation="vertical"
+                    android:id="@+id/Sepiafilter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:id="@+id/Sepiafilter"
                     android:layout_toRightOf="@+id/Anselfilter"
-                    android:gravity="center">
+                    android:gravity="center"
+                    android:orientation="vertical">
 
                     <TextView
                         android:id="@+id/text_Sepia"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/filter_Sepia"
-                        android:textSize="8sp"/>
+                        android:textSize="8sp" />
 
                     <ImageButton
+                        android:id="@+id/filter_Sepia"
                         android:layout_width="50dp"
                         android:layout_height="50dp"
-                        android:id="@+id/filter_Sepia"
-                        android:src="@drawable/sepia"
+                        android:background="@color/colorTrans"
                         android:scaleType="fitCenter"
-                        android:background="@color/colorTrans" />
+                        android:src="@drawable/sepia" />
                 </LinearLayout>
 
                 <LinearLayout
-                    android:orientation="vertical"
+                    android:id="@+id/Retrofilter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:id="@+id/Retrofilter"
                     android:layout_toRightOf="@+id/Sepiafilter"
-                    android:gravity="center">
+                    android:gravity="center"
+                    android:orientation="vertical">
 
                     <TextView
                         android:id="@+id/text_Retro"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/filter_Retro"
-                        android:textSize="8sp"/>
+                        android:textSize="8sp" />
 
                     <ImageButton
+                        android:id="@+id/filter_Retro"
                         android:layout_width="50dp"
                         android:layout_height="50dp"
-                        android:id="@+id/filter_Retro"
-                        android:src="@drawable/retro"
+                        android:background="@color/colorTrans"
                         android:scaleType="fitCenter"
-                        android:background="@color/colorTrans" />
+                        android:src="@drawable/retro" />
                 </LinearLayout>
 
                 <LinearLayout
-                    android:orientation="vertical"
+                    android:id="@+id/Georgiafilter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:id="@+id/Georgiafilter"
                     android:layout_toRightOf="@+id/Retrofilter"
-                    android:gravity="center">
+                    android:gravity="center"
+                    android:orientation="vertical">
 
                     <TextView
                         android:id="@+id/text_Georgia"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/filter_Georgia"
-                        android:textSize="8sp"/>
+                        android:textSize="8sp" />
 
                     <ImageButton
+                        android:id="@+id/filter_Georgia"
                         android:layout_width="50dp"
                         android:layout_height="50dp"
-                        android:id="@+id/filter_Georgia"
-                        android:src="@drawable/georgia"
+                        android:background="@color/colorTrans"
                         android:scaleType="fitCenter"
-                        android:background="@color/colorTrans" />
+                        android:src="@drawable/georgia" />
                 </LinearLayout>
 
                 <LinearLayout
-                    android:orientation="vertical"
+                    android:id="@+id/Saharafilter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:id="@+id/Saharafilter"
                     android:layout_toRightOf="@+id/Georgiafilter"
-                    android:gravity="center">
+                    android:gravity="center"
+                    android:orientation="vertical">
 
                     <TextView
                         android:id="@+id/text_Sahara"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/filter_Sahara"
-                        android:textSize="8sp"/>
+                        android:textSize="8sp" />
 
                     <ImageButton
+                        android:id="@+id/filter_Sahara"
                         android:layout_width="50dp"
                         android:layout_height="50dp"
-                        android:id="@+id/filter_Sahara"
-                        android:src="@drawable/sahara"
+                        android:background="@color/colorTrans"
                         android:scaleType="fitCenter"
-                        android:background="@color/colorTrans" />
+                        android:src="@drawable/sahara" />
                 </LinearLayout>
 
                 <LinearLayout
-                    android:orientation="vertical"
+                    android:id="@+id/Polaroidfilter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:id="@+id/Polaroidfilter"
                     android:layout_toRightOf="@+id/Saharafilter"
-                    android:gravity="center">
+                    android:gravity="center"
+                    android:orientation="vertical">
 
                     <TextView
                         android:id="@+id/text_Polaroid"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/filter_Polaroid"
-                        android:textSize="8sp"/>
+                        android:textSize="8sp" />
 
                     <ImageButton
+                        android:id="@+id/filter_Polaroid"
                         android:layout_width="50dp"
                         android:layout_height="50dp"
-                        android:id="@+id/filter_Polaroid"
-                        android:src="@drawable/polrd"
+                        android:background="@color/colorTrans"
                         android:scaleType="fitCenter"
-                        android:background="@color/colorTrans" />
+                        android:src="@drawable/polrd" />
                 </LinearLayout>
 
                 <LinearLayout
-                    android:orientation="vertical"
+                    android:id="@+id/CRTtvfilter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:id="@+id/CRTtvfilter"
                     android:layout_toRightOf="@+id/Polaroidfilter"
-                    android:gravity="center">
+                    android:gravity="center"
+                    android:orientation="vertical">
 
                     <TextView
                         android:id="@+id/text_CRTtv"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/filter_CRTtv"
-                        android:textSize="8sp"/>
+                        android:textSize="8sp" />
 
                     <ImageButton
+                        android:id="@+id/filter_CRTtv"
                         android:layout_width="50dp"
                         android:layout_height="50dp"
-                        android:id="@+id/filter_CRTtv"
-                        android:src="@drawable/crtv"
+                        android:background="@color/colorTrans"
                         android:scaleType="fitCenter"
-                        android:background="@color/colorTrans" />
+                        android:src="@drawable/crtv" />
                 </LinearLayout>
 
                 <LinearLayout
-                    android:orientation="vertical"
+                    android:id="@+id/VHSfilter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:id="@+id/VHSfilter"
                     android:layout_toRightOf="@+id/CRTtvfilter"
-                    android:gravity="center">
+                    android:gravity="center"
+                    android:orientation="vertical">
 
                     <TextView
                         android:id="@+id/text_VHS"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/filter_VHS"
-                        android:textSize="8sp"/>
+                        android:textSize="8sp" />
 
                     <ImageButton
+                        android:id="@+id/filter_VHS"
                         android:layout_width="50dp"
                         android:layout_height="50dp"
-                        android:id="@+id/filter_VHS"
-                        android:src="@drawable/vhs"
+                        android:background="@color/colorTrans"
                         android:scaleType="fitCenter"
-                        android:background="@color/colorTrans" />
+                        android:src="@drawable/vhs" />
                 </LinearLayout>
 
             </RelativeLayout>
@@ -423,168 +434,168 @@
         </HorizontalScrollView>
 
         <LinearLayout
-            android:orientation="vertical"
+            android:id="@+id/layout_adjustment"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center"
             android:layout_alignParentBottom="true"
-            android:id="@+id/layout_adjustment"
-            android:padding="10dp"
-            android:layout_centerInParent="true">
+            android:layout_centerInParent="true"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="10dp">
 
             <RelativeLayout
+                android:id="@+id/layout_adjustValue"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/layout_adjustValue"
-                android:gravity="center"
                 android:layout_alignParentTop="true"
-                android:layout_centerInParent="true">
+                android:layout_centerInParent="true"
+                android:gravity="center">
 
                 <TextView
                     android:id="@+id/text_brightness"
                     android:layout_width="80dp"
                     android:layout_height="45dp"
-                    android:gravity="center"
-                    android:text="@string/seekbar_brightness"
-                    android:textSize="20sp"
                     android:layout_alignParentTop="true"
                     android:background="@color/colorAccent"
-                    android:textColor="@color/colorBg" />
+                    android:gravity="center"
+                    android:text="@string/seekbar_brightness"
+                    android:textColor="@color/colorBg"
+                    android:textSize="20sp" />
 
                 <TextView
                     android:id="@+id/text_contrast"
                     android:layout_width="80dp"
                     android:layout_height="45dp"
                     android:layout_marginTop="5dp"
+                    android:background="@color/colorAccent"
                     android:gravity="center"
                     android:text="@string/seekbar_contrast"
+                    android:textColor="@color/colorBg"
                     android:textSize="20sp"
-                    android:visibility="invisible"
-                    android:background="@color/colorAccent"
-                    android:textColor="@color/colorBg" />
+                    android:visibility="invisible" />
 
                 <TextView
                     android:id="@+id/text_saturation"
                     android:layout_width="80dp"
                     android:layout_height="45dp"
                     android:layout_marginTop="5dp"
+                    android:background="@color/colorAccent"
                     android:gravity="center"
                     android:text="@string/seekbar_saturation"
+                    android:textColor="@color/colorBg"
                     android:textSize="20sp"
-                    android:visibility="invisible"
-                    android:background="@color/colorAccent"
-                    android:textColor="@color/colorBg" />
+                    android:visibility="invisible" />
 
                 <TextView
                     android:id="@+id/text_vinyet"
                     android:layout_width="80dp"
                     android:layout_height="45dp"
                     android:layout_marginTop="5dp"
+                    android:background="@color/colorAccent"
                     android:gravity="center"
                     android:text="@string/seekbar_corner_radius"
+                    android:textColor="@color/colorBg"
                     android:textSize="20sp"
-                    android:visibility="invisible"
-                    android:background="@color/colorAccent"
-                    android:textColor="@color/colorBg" />
+                    android:visibility="invisible" />
             </RelativeLayout>
 
             <RelativeLayout
+                android:id="@+id/layout_adjustSeekBar"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/layout_adjustSeekBar"
-                android:gravity="center"
-                android:rotation="0"
                 android:layout_centerInParent="true"
-                android:layout_gravity="center">
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:rotation="0">
 
                 <SeekBar
                     android:id="@+id/seekBarBrightness"
                     android:layout_width="300dp"
                     android:layout_height="wrap_content"
-                    android:progressDrawable="@drawable/progress_cyan"
+                    android:layout_centerInParent="true"
                     android:max="10"
-                    android:thumb="@drawable/thumbler_small"
-                    android:layout_centerInParent="true" />
+                    android:progressDrawable="@drawable/progress_cyan"
+                    android:thumb="@drawable/thumbler_small" />
 
                 <SeekBar
                     android:id="@+id/seekBarContrast"
                     android:layout_width="300dp"
                     android:layout_height="wrap_content"
-                    android:progressDrawable="@drawable/progress_cyan"
+                    android:layout_centerInParent="true"
                     android:max="10"
-                    android:thumb="@drawable/thumbler_small"
-                    android:layout_centerInParent="true" />
+                    android:progressDrawable="@drawable/progress_cyan"
+                    android:thumb="@drawable/thumbler_small" />
 
                 <SeekBar
                     android:id="@+id/seekBarSaturation"
                     android:layout_width="300dp"
                     android:layout_height="wrap_content"
-                    android:progressDrawable="@drawable/progress_cyan"
+                    android:layout_centerInParent="true"
                     android:max="10"
-                    android:thumb="@drawable/thumbler_small"
-                    android:layout_centerInParent="true" />
+                    android:progressDrawable="@drawable/progress_cyan"
+                    android:thumb="@drawable/thumbler_small" />
 
                 <SeekBar
                     android:id="@+id/seekBarVinyet"
                     android:layout_width="300dp"
                     android:layout_height="wrap_content"
-                    android:progressDrawable="@drawable/progress_cyan"
+                    android:layout_centerInParent="true"
                     android:max="10"
-                    android:thumb="@drawable/thumbler_small"
-                    android:layout_centerInParent="true" />
+                    android:progressDrawable="@drawable/progress_cyan"
+                    android:thumb="@drawable/thumbler_small" />
 
             </RelativeLayout>
 
             <RelativeLayout
+                android:id="@+id/layout_adjustButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:gravity="center"
-                android:layout_centerInParent="true"
                 android:layout_alignParentBottom="true"
-                android:id="@+id/layout_adjustButton">
+                android:layout_centerInParent="true"
+                android:gravity="center">
 
                 <ImageButton
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
                     android:id="@+id/brightnessButton"
-                    android:layout_gravity="center_horizontal"
-                    android:src="@mipmap/ic_brightness"
-                    android:scaleType="fitCenter"
-                    android:background="@color/colorTrans"
-                    android:padding="5dp" />
-
-                <ImageButton
                     android:layout_width="50dp"
                     android:layout_height="50dp"
+                    android:layout_gravity="center_horizontal"
+                    android:background="@color/colorTrans"
+                    android:padding="5dp"
+                    android:scaleType="fitCenter"
+                    android:src="@mipmap/ic_brightness" />
+
+                <ImageButton
                     android:id="@+id/contrastButton"
-                    android:layout_gravity="center_horizontal"
-                    android:src="@mipmap/ic_contrast"
-                    android:scaleType="fitCenter"
-                    android:background="@color/colorTrans"
-                    android:padding="5dp"
-                    android:layout_toRightOf="@+id/brightnessButton" />
-
-                <ImageButton
                     android:layout_width="50dp"
                     android:layout_height="50dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_toRightOf="@+id/brightnessButton"
+                    android:background="@color/colorTrans"
+                    android:padding="5dp"
+                    android:scaleType="fitCenter"
+                    android:src="@mipmap/ic_contrast" />
+
+                <ImageButton
                     android:id="@+id/saturationButton"
-                    android:layout_gravity="center_horizontal"
-                    android:src="@mipmap/ic_saturation"
-                    android:scaleType="fitCenter"
-                    android:background="@color/colorTrans"
-                    android:padding="5dp"
-                    android:layout_toRightOf="@+id/contrastButton" />
-
-                <ImageButton
                     android:layout_width="50dp"
                     android:layout_height="50dp"
-                    android:id="@+id/vinyetButton"
                     android:layout_gravity="center_horizontal"
-                    android:src="@mipmap/ic_vinyet"
-                    android:scaleType="fitCenter"
+                    android:layout_toRightOf="@+id/contrastButton"
                     android:background="@color/colorTrans"
                     android:padding="5dp"
-                    android:layout_toRightOf="@+id/saturationButton" />
+                    android:scaleType="fitCenter"
+                    android:src="@mipmap/ic_saturation" />
+
+                <ImageButton
+                    android:id="@+id/vinyetButton"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_toRightOf="@+id/saturationButton"
+                    android:background="@color/colorTrans"
+                    android:padding="5dp"
+                    android:scaleType="fitCenter"
+                    android:src="@mipmap/ic_vinyet" />
 
             </RelativeLayout>
         </LinearLayout>
@@ -593,10 +604,10 @@
             android:id="@+id/seek_bar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:padding="10dp"
             android:layout_alignParentBottom="true"
-            android:focusable="false" />
+            android:layout_centerInParent="true"
+            android:focusable="false"
+            android:padding="10dp" />
 
     </RelativeLayout>
 

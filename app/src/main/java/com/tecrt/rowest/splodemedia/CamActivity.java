@@ -1,10 +1,19 @@
 package com.tecrt.rowest.splodemedia;
 
+import android.Manifest;
+import android.annotation.TargetApi;
+import android.app.Activity;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Gravity;
@@ -69,6 +78,8 @@ public class CamActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_cam);
+
+        boolean result= Utility.checkPermission(CamActivity.this);
 
         Typeface face= Typeface.createFromAsset(getAssets(), "font/Gotham-Medium.ttf");
         TextView tv1=(TextView)findViewById(R.id.text_none);
@@ -614,6 +625,56 @@ public class CamActivity extends AppCompatActivity {
                 mCameraView.setVideoEncoder(null);
         }
     };
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        switch (requestCode) {
+            case Utility.MY_PERMISSIONS_REQUEST_CAMERA:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.i(TAG, "CAMERA permission has now been granted. Showing preview.");
+                } else {
+                    Log.i(TAG, "CAMERA permission was NOT granted.");
+                }
+                break;
+        }
+    }
+
+    private static class Utility {
+        public static final int MY_PERMISSIONS_REQUEST_CAMERA = 42;
+
+        @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+        public static boolean checkPermission(final Context context)
+        {
+            int currentAPIVersion = Build.VERSION.SDK_INT;
+            if(currentAPIVersion>= Build.VERSION_CODES.M)
+            {
+                if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                    if (ActivityCompat.shouldShowRequestPermissionRationale((Activity) context, Manifest.permission.CAMERA)) {
+                        android.support.v7.app.AlertDialog.Builder alertBuilder = new android.support.v7.app.AlertDialog.Builder(context);
+                        alertBuilder.setCancelable(true);
+                        alertBuilder.setTitle("Permission necessary");
+                        alertBuilder.setMessage("Camera is necessary");
+                        alertBuilder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                            @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+                            public void onClick(DialogInterface dialog, int which) {
+                                ActivityCompat.requestPermissions((Activity) context, new String[]{Manifest.permission.CAMERA}, MY_PERMISSIONS_REQUEST_CAMERA);
+                            }
+                        });
+                        android.support.v7.app.AlertDialog alert = alertBuilder.create();
+                        alert.show();
+
+                    } else {
+                        ActivityCompat.requestPermissions((Activity) context, new String[]{Manifest.permission.CAMERA}, MY_PERMISSIONS_REQUEST_CAMERA);
+                    }
+                    return false;
+                } else {
+                    return true;
+                }
+            } else {
+                return true;
+            }
+        }
+    }
 
     /**
      * use to give a pause to show animation before hiding UI element

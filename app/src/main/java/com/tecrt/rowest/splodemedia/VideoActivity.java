@@ -9,13 +9,14 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.content.res.AssetManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -23,7 +24,6 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
@@ -35,19 +35,19 @@ import com.daimajia.androidanimations.library.Techniques;
 import com.daimajia.androidanimations.library.YoYo;
 import com.tecrt.rowest.tecrtmedialib.MiscUtils;
 import com.tecrt.rowest.tecrtmedialib.VideoGLView;
-import com.tecrt.rowest.tecrtmedialib.encoder.MediaAudioEncoder;
-import com.tecrt.rowest.tecrtmedialib.encoder.MediaEncoder;
-import com.tecrt.rowest.tecrtmedialib.encoder.MediaMuxerWrapper;
-import com.tecrt.rowest.tecrtmedialib.encoder.MediaVideoEncoder;
+import com.tecrt.rowest.tecrtmedialib.encoder.ExtractDecodeEditEncodeMuxer;
 import com.tecrt.rowest.tecrtmedialib.tecrtData;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
-public class VideoActivity extends AppCompatActivity implements OnItemSelectedListener{
+public class VideoActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener {
 
     private static final boolean DEBUG = false;	// TODO set false on release
-    private static final String TAG = "CameraFragment";
+    private static final String TAG = "VideoActivity";
 
     /**
      * for camera preview display
@@ -57,10 +57,7 @@ public class VideoActivity extends AppCompatActivity implements OnItemSelectedLi
      * for scale mode display
      */
     private TextView mScaleModeView;
-    /**
-     * muxer for audio/video recording
-     */
-    private MediaMuxerWrapper mMuxer;
+
     // Common observer for all View Buttons
     private final ViewObserver mView_OnClickListener = new ViewObserver();
     // Common observer for all Adjustment Buttons
@@ -73,8 +70,8 @@ public class VideoActivity extends AppCompatActivity implements OnItemSelectedLi
     private SharedPreferences mPreferences;
     // Shared data instance.
     private tecrtData mSharedData = new tecrtData();
-    File mVideoFolder;
     File mVideoFile;
+    String recordervideo = null;
     private ArrayAdapter<String> mMovieFiles;
     private int mSelectedMovie;
 
@@ -83,10 +80,6 @@ public class VideoActivity extends AppCompatActivity implements OnItemSelectedLi
      */
     public void updateSharedData(tecrtData sharedData) {
         mVideoView.updateSharedData(sharedData);
-    }
-
-    public VideoActivity() {
-        // need default constructor
     }
 
     @Override
@@ -140,8 +133,6 @@ public class VideoActivity extends AppCompatActivity implements OnItemSelectedLi
         mVideoView.setOnClickListener(mOnClickListener);
         mScaleModeView = (TextView)findViewById(R.id.scalemode_textview);
         updateScaleModeText();
-//        mRecordButton = (ImageButton)findViewById(R.id.button_stop_rec);
-//        mRecordButton.setOnClickListener(mOnClickListener);
 
         // Set Vew Button OnClickListeners.
         findViewById(R.id.button_camera_video).setOnClickListener(mView_OnClickListener);
@@ -195,73 +186,75 @@ public class VideoActivity extends AppCompatActivity implements OnItemSelectedLi
 
         try {
             //Get Gallery Folder or create it if doesnt exist
-            mVideoFolder = MiscUtils.createVideoFolder("Splode");
-            mVideoFile = MiscUtils.createVideoFileName(mVideoFolder,"fbo-gl-recording", ".mp4");//new File(getFilesDir(), "fbo-gl-recording.mp4");
+            mSharedData.mVideoFolder = MiscUtils.createVideoFolder("Splode");
+            mVideoFile = MiscUtils.createVideoFileName(mSharedData.mVideoFolder,"splode-", ".mp4");//new File(getFilesDir(), "fbo-gl-recording.mp4");
         } catch (IOException e) {
             e.printStackTrace();
         }
-        //mVideoFile = new File(getFilesDir(), "fbo-gl-recording.mp4");
-
-
-        // Need to create one of these fancy ArrayAdapter thingies, and specify the generic layout
-        // for the widget itself.
-        try {
-
-            //TODO Priority: hide item list in cam view
-            ArrayAdapter<String> adapter;
-            //Get asset file for first time user.
-            AssetManager man = getAssets();
-            //TODO Priority: add Splode Gallery file to list without crashing
-            String[] mMovieString = prepend(MiscUtils.getFiles(mVideoFolder, "*.mp4"),"");//MiscUtils.getFiles(getFilesDir(), "*.mp4");
-            if(mMovieString.length > 1) {
-                mMovieFiles = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, mMovieString);
-                mVideoView.useAssets = false;
-            }
-            else {
-                //mMovieString = prepend(man.list("samples"),"samples/");//man.list("samples");
-                mMovieString = prepend(man.list("empty"),"/");//man.list("samples");
-                mMovieFiles = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, mMovieString);
-                mVideoView.useAssets = true;
-            }
-            //mMovieFiles.addAll(mMovieString);
-
-            mSelectedMovie = -1;
-            mMovieFiles.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-            // Populate file-selection spinner.
-            Spinner spinner = (Spinner) findViewById(R.id.playMovieFile_spinner);
-            // Apply the adapter to the spinner.
-            spinner.setAdapter(mMovieFiles);
-            spinner.setOnItemSelectedListener(this);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        mVideoView.seek_bar = (SeekBar) findViewById(R.id.seek_bar);
-        mVideoView.seek_bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if(fromUser)
-                    mVideoView.seekTo(progress);
-                int maxprogress = mVideoView.seek_bar.getMax();
-                if(progress > maxprogress - 500) {
-                    ImageButton toggleButton = (ImageButton) findViewById(R.id.button_play_pause);
-                    toggleButton.setImageResource(R.mipmap.ic_pause);
-                    PauseVideo();
-                    stopRecording();
-                    togglePlay = false;
-                    showToast("stop");
-                }
-            }
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-        });
+//        //mVideoFile = new File(getFilesDir(), "fbo-gl-recording.mp4");
+//
+//
+//        // Need to create one of these fancy ArrayAdapter thingies, and specify the generic layout
+//        // for the widget itself.
+//        try {
+//
+//            //TODO Priority: hide item list in cam view
+//            ArrayAdapter<String> adapter;
+//            //Get asset file for first time user.
+//            AssetManager man = getAssets();
+//            //TODO Priority: add Splode Gallery file to list without crashing
+//            String[] mMovieString = prepend(MiscUtils.getFiles(mSharedData.mVideoFolder, "*.mp4"),"");//MiscUtils.getFiles(getFilesDir(), "*.mp4");
+//            if(mMovieString.length > 1) {
+//                mMovieFiles = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, mMovieString);
+//                mSharedData.useAssets = false;
+//            }
+//            else {
+//                //mMovieString = prepend(man.list("samples"),"samples/");//man.list("samples");
+//                mMovieString = prepend(man.list("empty"),"/");//man.list("samples");
+//                mMovieFiles = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, mMovieString);
+//                mSharedData.useAssets = true;
+//            }
+//            //mMovieFiles.addAll(mMovieString);
+//
+//            mSelectedMovie = -1;
+//            mMovieFiles.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+//            // Populate file-selection spinner.
+//            Spinner spinner = (Spinner) findViewById(R.id.playMovieFile_spinner);
+//            // Apply the adapter to the spinner.
+//            spinner.setAdapter(mMovieFiles);
+//            spinner.setOnItemSelectedListener(this);
+//            View v = spinner.getSelectedView();
+//            ((TextView)v).setTextColor(0xbc9e66);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//
+//        mVideoView.seek_bar = (SeekBar) findViewById(R.id.seek_bar);
+//        mVideoView.seek_bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+//            @Override
+//            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+//                if(fromUser)
+//                    mVideoView.seekTo(progress);
+//                int maxprogress = mVideoView.seek_bar.getMax();
+//                if(progress > maxprogress - 500) {
+//                    ImageButton toggleButton = (ImageButton) findViewById(R.id.button_play_pause);
+//                    toggleButton.setImageResource(R.mipmap.ic_pause);
+//                    PauseVideo();
+//                    stopRecording();
+//                    togglePlay = false;
+//                    showToast("stop");
+//                }
+//            }
+//            @Override
+//            public void onStartTrackingTouch(SeekBar seekBar) {
+//
+//            }
+//
+//            @Override
+//            public void onStopTrackingTouch(SeekBar seekBar) {
+//
+//            }
+//        });
 
         //Pause on load activity to let everything load
         new CountDownTimer(500, 100) {
@@ -284,6 +277,15 @@ public class VideoActivity extends AppCompatActivity implements OnItemSelectedLi
 
     }
 
+    public String[] prepend(String[] input, String prepend) {
+        String[] output = new String[input.length + 1];
+        output[0] = "" + prepend + "None";
+        for (int index = 0; index < input.length; index++) {
+            output[index+1] = "" + prepend + input[index];
+        }
+        return output;
+    }
+
     @Override
     public void onResume() {
         super.onResume();
@@ -294,11 +296,9 @@ public class VideoActivity extends AppCompatActivity implements OnItemSelectedLi
     @Override
     public void onPause() {
         if (DEBUG) Log.v(TAG, "onPause:");
-        stopRecording();
         mVideoView.onPause();
         super.onPause();
     }
-
 
     void showToast(String message) {
         Toast toast = Toast.makeText(this, message, Toast.LENGTH_SHORT);
@@ -320,15 +320,16 @@ public class VideoActivity extends AppCompatActivity implements OnItemSelectedLi
         Spinner spinner = (Spinner) parent;
         mSelectedMovie = spinner.getSelectedItemPosition();
         if(mSelectedMovie >0) {
-            mVideoView.VideoUpdate = true;
+            mSharedData.VideoUpdate = true;
             StopVideo();
-            if (!mVideoView.useAssets) {
+            if (!mSharedData.useAssets) {
                 String Galfile = "/" + mMovieFiles.getItem(mSelectedMovie);
-                mVideoView.galAddr = Uri.parse(mVideoFolder.getAbsolutePath() + Galfile);
-                recordervideo = mVideoView.galAddr.toString();
+                mSharedData.galAddr = Uri.parse(mSharedData.mVideoFolder.getAbsolutePath() + Galfile);
+                recordervideo = MiscUtils.getPath(this,mSharedData.galAddr);
             } else {
-                mVideoView.galAddr = null;
+                mSharedData.galAddr = null;
             }
+            updateSharedData(mSharedData);
         }
     }
 
@@ -336,6 +337,40 @@ public class VideoActivity extends AppCompatActivity implements OnItemSelectedLi
     public void onNothingSelected(AdapterView<?> parent) {
 
     }
+
+    /**
+     * Global On click listener for all views in activity
+     * Handle animation of buttons and views here
+     * method when touch record button
+     */
+    private final View.OnClickListener mOnClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(final View view) {
+            switch (view.getId()) {
+                case R.id.cameraView:
+                    final int scale_mode = (mVideoView.getScaleMode() + 1) % 4;
+//                    mVideoView.setScaleMode(scale_mode);
+                    updateScaleModeText();
+                    if (toggleMenu) {//TODO Priority: Reduce number of clicks to open GLview
+                        hideUIElement(Techniques.FadeOutUp, 700, findViewById(R.id.layout_menu));
+                        hideUIElement(Techniques.FadeOutRight, 700, findViewById(R.id.layout_menuVideo));
+                        hideUIElement(Techniques.FadeOutLeft, 700, findViewById(R.id.layout_filters));
+                        hideUIElement(Techniques.FadeOutDown, 700, findViewById(R.id.layout_adjustment));
+                        hideUIElement(Techniques.FadeOut, 700, findViewById(R.id.seek_bar));
+                        toggleMenu = false;
+                        //toggleButton.setImageResource(R.mipmap.ic_rec);
+                    } else {
+                        showUIElement(Techniques.FadeInDown, 700, findViewById(R.id.layout_menu));
+                        showUIElement(Techniques.FadeInRight, 700, findViewById(R.id.layout_menuVideo));
+                        showUIElement(Techniques.FadeIn, 700, findViewById(R.id.seek_bar));
+                        toggleMenu = true;
+                    }
+                    YoYo.with(Techniques.RotateIn).duration(700).playOn(findViewById(R.id.button_menu));
+
+                    break;
+            }
+        }
+    };
 
     /**
      * View Buttons
@@ -346,15 +381,8 @@ public class VideoActivity extends AppCompatActivity implements OnItemSelectedLi
         public void onClick(final View v) {
             int i = v.getId();
             if (i == R.id.button_stop_rec) {
-                if (toggleRec && mMuxer == null) {
-                    toggleRec = false;
-                    showToast("Record Start");
-                    startRecording();
-                } else {
-                    toggleRec = true;
-                    showToast("Record Stop");
-                    stopRecording();
-                }
+                if (toggleRec && mSharedData.galAddr != null)
+                    RecVideo();
                 YoYo.with(Techniques.RotateIn).duration(700).playOn(findViewById(R.id.button_stop_rec));
 
                 //Video Editor Buttons
@@ -365,17 +393,17 @@ public class VideoActivity extends AppCompatActivity implements OnItemSelectedLi
                 YoYo.with(Techniques.RotateIn).duration(700).playOn(findViewById(R.id.button_add));
 
             } else if (i == R.id.button_reset) {
-                StopVideo();
-                toggleButton = (ImageButton) findViewById(R.id.button_play_pause);
-                toggleButton.setImageResource(R.mipmap.ic_pause);
-                togglePlay = false;
-                //TODO reset view to show start of video
-                showToast("Reset");
+//                StopVideo();
+//                toggleButton = (ImageButton) findViewById(R.id.button_play_pause);
+//                toggleButton.setImageResource(R.mipmap.ic_pause);
+//                togglePlay = false;
+//                //TODO reset view to show start of video
+//                showToast("Reset");
                 YoYo.with(Techniques.RotateIn).duration(700).playOn(findViewById(R.id.button_reset));
 
             } else if (i == R.id.button_play_pause) {
                 toggleButton = (ImageButton) findViewById(R.id.button_play_pause);
-                if (mVideoView.galAddr != null || mVideoView.galSearch != null) {
+                if (mSharedData.galAddr != null || mSharedData.galSearch != null) {
                     if (togglePlay) {
                         toggleButton.setImageResource(R.mipmap.ic_pause);
                         PauseVideo();
@@ -393,10 +421,12 @@ public class VideoActivity extends AppCompatActivity implements OnItemSelectedLi
             }
             else if (i == R.id.button_upload) {
                 StopVideo();
-                Intent inten = new Intent(VideoActivity.this, UploadActivity.class);
-                inten.putExtra("RecordAddress", recordervideo);
-                startActivity(inten);
                 YoYo.with(Techniques.RotateIn).duration(700).playOn(findViewById(R.id.button_upload));
+                if(recordervideo!=null) {
+                    Intent inten = new Intent(VideoActivity.this, UploadActivity.class);
+                    inten.putExtra("RecordAddress", recordervideo);
+                    startActivity(inten);
+                }
 
             }
         }
@@ -706,6 +736,7 @@ public class VideoActivity extends AppCompatActivity implements OnItemSelectedLi
         }
     }
 
+
     private void updateScaleModeText() {
         final int scale_mode = mVideoView.getScaleMode();
         mScaleModeView.setText(
@@ -715,18 +746,78 @@ public class VideoActivity extends AppCompatActivity implements OnItemSelectedLi
                         : (scale_mode == 3 ? "keep aspect(crop center)" : ""))));
     }
 
+
+    Handler handler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            SimpleDateFormat dateformat = new SimpleDateFormat("HH:mm:ss MM/dd/yyyy", Locale.US);
+            Bundle bundle = msg.getData();
+            String string = bundle.getString("myKey");
+            TextView myTextView =
+                    (TextView)findViewById(R.id.myTextView);
+            myTextView.setText("Rec Completed on :" + dateformat.format(new Date()) + " at " + string);
+            recordervideo = string;
+            toggleRec = true;
+            ImageButton toggleButton = (ImageButton) findViewById(R.id.button_stop_rec);
+            toggleButton.setImageResource(R.mipmap.ic_save);
+            toggleButton.setColorFilter(0);	// return to default color
+            showToast("Record Stop");
+        }
+    };
+
+    public void RecVideo()
+    {
+
+        ImageButton toggleButton = (ImageButton) findViewById(R.id.button_stop_rec);
+        toggleButton.setImageResource(R.mipmap.ic_rec);
+        toggleButton.setColorFilter(0xffff0000);	// turn red
+        updateSharedData(mSharedData);
+
+        Runnable runnable = new Runnable() {
+            public void run() {
+
+
+                ExtractDecodeEditEncodeMuxer test = new ExtractDecodeEditEncodeMuxer();
+                test.OUTPUT_FILENAME_DIR = mSharedData.mVideoFolder;
+                test.resource = getResources();
+//                test.setContext(VideoActivity.this);
+                try {
+                    if(mSharedData.galAddr!=null)
+                        test.testExtractDecodeEditEncodeMuxAudioVideo(mSharedData, VideoActivity.this);
+                    else
+                        test.testExtractDecodeEditEncodeMuxAudioVideo();
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                }
+
+
+                Message msg = handler.obtainMessage();
+                Bundle bundle = new Bundle();
+                String dateString = test.mOutputFile;
+                bundle.putString("myKey", dateString);
+                msg.setData(bundle);
+                handler.sendMessage(msg);
+
+            }
+
+        };
+
+        Thread mythread = new Thread(runnable);
+        mythread.start();
+    }
+
     /**
      * onClick handler for "play" button.
      */
     public void StartVideo() {
 
-        if ( mVideoView.VideoUpdate ) {
+        if ( mSharedData.VideoUpdate ) {
             //Get address of video to be played
-            mVideoView.useAssets = false;
-            if (mVideoView.galAddr == null) {
-                if (mVideoView.useAssets) {
+            mSharedData.useAssets = false;
+            if (mSharedData.galAddr == null) {
+                if (mSharedData.useAssets) {
                     String Galfile = "/" + mMovieFiles.getItem(mSelectedMovie);
-                    mVideoView.galSearch = Galfile;
+                    mSharedData.galSearch = Galfile;
                 }
             }
 
@@ -739,34 +830,21 @@ public class VideoActivity extends AppCompatActivity implements OnItemSelectedLi
                 }
 
                 public void onFinish() {
-                    mVideoView.seekUpdation();
+//                    mVideoView.seekUpdation();
                     //TODO apply video height and width
-                    mSharedData.videoWidth = mVideoView.getMediaHeight();
-                    mSharedData.videoHeight = mVideoView.getMediaWidth();
+//                    mSharedData.videoWidth = mVideoView.getMediaHeight();
+//                    mSharedData.videoHeight = mVideoView.getMediaWidth();
                     mVideoView.setVideoSize(mSharedData.videoWidth, mSharedData.videoHeight);
-                    recordervideo = mVideoView.galAddr.toString();
+                    recordervideo = MiscUtils.getPath(VideoActivity.this,mSharedData.galAddr);
                     updateSharedData(mSharedData);
                 }
 
             }.start();
-            //TODO Need to find a better way then accessing VideoGLView mediaplayer directly
-//        mVideoView.mMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-//
-//            @Override
-//            public void onCompletion(MediaPlayer mp) {
-//                ImageButton toggleButton = (ImageButton) findViewById(R.id.button_play_pause);
-//                toggleButton.setImageResource(R.mipmap.ic_pause);
-//                //player.pause();
-//                PauseVideo();
-//                togglePlay = false;
-//                showToast("Stop");
-//            }
-//        });
         }
         else {
             mVideoView.PlayVideo();
         }
-
+        updateSharedData(mSharedData);
     }
 
     /**
@@ -788,87 +866,10 @@ public class VideoActivity extends AppCompatActivity implements OnItemSelectedLi
             toggleButton.setImageResource(R.mipmap.ic_pause);
             togglePlay = false;
             mVideoView.StopVideo();
-            mVideoView.VideoUpdate = true;
+            mSharedData.VideoUpdate = true;
+            updateSharedData(mSharedData);
         }
     }
-
-    /**
-     * start resorcing
-     * This is a sample project and call this on UI thread to avoid being complicated
-     * but basically this should be called on private thread because prepareing
-     * of encoder is heavy work
-     */
-    private void startRecording() {
-        if (DEBUG) Log.v(TAG, "startRecording:");
-        StopVideo();
-        new CountDownTimer(1000, 100) {
-
-            public void onTick(long millisUntilFinished) {
-                // You don't need anything here
-            }
-
-            public void onFinish() {
-                ImageButton toggleButton = (ImageButton) findViewById(R.id.button_stop_rec);
-                try {
-                    StartVideo();
-                    toggleButton.setImageResource(R.mipmap.ic_rec);
-                    toggleButton.setColorFilter(0xffff0000);	// turn red
-                    mMuxer = new MediaMuxerWrapper(".mp4");	// if you record audio only, ".m4a" is also OK.
-                    if (true) {
-                        // for video capturing
-                        new MediaVideoEncoder(mMuxer, mMediaEncoderListener, mVideoView.getVideoWidth(), mVideoView.getVideoHeight(),getResources(), mSharedData);
-                    }
-                    if (true) {
-                        // for audio capturing
-                        new MediaAudioEncoder(mMuxer, mMediaEncoderListener);
-                    }
-                    mMuxer.prepare();
-                    mMuxer.startRecording();
-                } catch (final IOException e) {
-                    toggleButton.setImageResource(R.mipmap.ic_save);
-                    toggleButton.setColorFilter(0);
-                    Log.e(TAG, "startCapture:", e);
-                }
-            }
-
-        }.start();
-    }
-
-    /**
-     * request stop recording
-     */
-    private void stopRecording() {
-        if (DEBUG) Log.v(TAG, "stopRecording:mMuxer=" + mMuxer);
-        ImageButton toggleButton = (ImageButton) findViewById(R.id.button_stop_rec);
-        toggleButton.setImageResource(R.mipmap.ic_save);
-        toggleButton.setColorFilter(0);	// return to default color
-        if (mMuxer != null) {
-            mMuxer.stopRecording();
-            recordervideo = mMuxer.getOutputPath();
-            mMuxer = null;
-            // you should not wait here
-        }
-    }
-
-    String recordervideo;
-    /**
-     * callback methods from encoder
-     */
-    private final MediaEncoder.MediaEncoderListener mMediaEncoderListener = new MediaEncoder.MediaEncoderListener() {
-        @Override
-        public void onPrepared(final MediaEncoder encoder) {
-            if (DEBUG) Log.v(TAG, "onPrepared:encoder=" + encoder);
-            if (encoder instanceof MediaVideoEncoder)
-                mVideoView.setVideoEncoder((MediaVideoEncoder)encoder);
-        }
-
-        @Override
-        public void onStopped(final MediaEncoder encoder) {
-            if (DEBUG) Log.v(TAG, "onStopped:encoder=" + encoder);
-            if (encoder instanceof MediaVideoEncoder)
-                mVideoView.setVideoEncoder(null);
-        }
-    };
 
     /**
      * functions to get video from gallery
@@ -968,24 +969,24 @@ public class VideoActivity extends AppCompatActivity implements OnItemSelectedLi
     private void onSelectFromGalleryResult(Intent data) {
 
         if (data != null) {
-            mVideoView.galAddr = data.getData();
-            mVideoView.VideoUpdate = true;
-            recordervideo = mVideoView.galAddr.toString();
-            new CountDownTimer(1000, 100) {
-
-                public void onTick(long millisUntilFinished) {
-                    // You don't need anything here
-                }
-
-                public void onFinish() {
-                    mVideoView.seekUpdation();
-                }
-
-            }.start();
-
+            mSharedData.galAddr = data.getData();
+            Message msg = handler.obtainMessage();
+            Bundle bundle = new Bundle();
+            bundle.putString("myKey", MiscUtils.getPath(this,mSharedData.galAddr));
+            msg.setData(bundle);
+            handler.sendMessage(msg);
+            mSharedData.VideoUpdate = true;
+            recordervideo = MiscUtils.getPath(this,mSharedData.galAddr);
+            updateSharedData(mSharedData);
         }
         else {
-            mVideoView.galAddr = null;
+            mSharedData.galAddr = null;
+            Message msg = handler.obtainMessage();
+            Bundle bundle = new Bundle();
+            bundle.putString("myKey", "Empty");
+            msg.setData(bundle);
+            handler.sendMessage(msg);
+            updateSharedData(mSharedData);
         }
     }
 
@@ -1076,49 +1077,6 @@ public class VideoActivity extends AppCompatActivity implements OnItemSelectedLi
         hideUIbyId.setVisibility(View.VISIBLE);
         YoYo.with(animType).duration(Duration).playOn(hideUIbyId);
     }
-
-    public String[] prepend(String[] input, String prepend) {
-        String[] output = new String[input.length + 1];
-        output[0] = "" + prepend + "None";
-        for (int index = 0; index < input.length; index++) {
-            output[index+1] = "" + prepend + input[index];
-        }
-        return output;
-    }
-
-    /**
-     * Global On click listener for all views in activity
-     * Handle animation of buttons and views here
-     * method when touch record button
-     */
-    private final View.OnClickListener mOnClickListener = new View.OnClickListener() {
-        @Override
-        public void onClick(final View view) {
-            switch (view.getId()) {
-                case R.id.cameraView:
-                    final int scale_mode = (mVideoView.getScaleMode() + 1) % 4;
-//                    mVideoView.setScaleMode(scale_mode);
-                    updateScaleModeText();
-                    if (toggleMenu) {//TODO Priority: Reduce number of clicks to open GLview
-                        hideUIElement(Techniques.FadeOutUp, 700, findViewById(R.id.layout_menu));
-                        hideUIElement(Techniques.FadeOutRight, 700, findViewById(R.id.layout_menuVideo));
-                        hideUIElement(Techniques.FadeOutLeft, 700, findViewById(R.id.layout_filters));
-                        hideUIElement(Techniques.FadeOutDown, 700, findViewById(R.id.layout_adjustment));
-                        hideUIElement(Techniques.FadeOut, 700, findViewById(R.id.seek_bar));
-                        toggleMenu = false;
-                        //toggleButton.setImageResource(R.mipmap.ic_rec);
-                    } else {
-                        showUIElement(Techniques.FadeInDown, 700, findViewById(R.id.layout_menu));
-                        showUIElement(Techniques.FadeInRight, 700, findViewById(R.id.layout_menuVideo));
-                        showUIElement(Techniques.FadeIn, 700, findViewById(R.id.seek_bar));
-                        toggleMenu = true;
-                    }
-                    YoYo.with(Techniques.RotateIn).duration(700).playOn(findViewById(R.id.button_menu));
-
-                    break;
-            }
-        }
-    };
 
 
 }

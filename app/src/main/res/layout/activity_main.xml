@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.tecrt.rowest.tecrtmedia.MainActivity">
+    tools:context="com.tecrt.rowest.splodemedia.MainActivity">
 
     <LinearLayout
         android:orientation="horizontal"
