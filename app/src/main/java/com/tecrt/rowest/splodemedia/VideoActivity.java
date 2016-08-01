@@ -9,6 +9,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.net.Uri;
@@ -74,6 +75,9 @@ public class VideoActivity extends AppCompatActivity implements AdapterView.OnIt
     String recordervideo = null;
     private ArrayAdapter<String> mMovieFiles;
     private int mSelectedMovie;
+
+    private SeekBar seekBar;
+    private Handler threadHandler = new Handler();
 
     /**
      * update for shared data.
@@ -191,70 +195,45 @@ public class VideoActivity extends AppCompatActivity implements AdapterView.OnIt
         } catch (IOException e) {
             e.printStackTrace();
         }
-//        //mVideoFile = new File(getFilesDir(), "fbo-gl-recording.mp4");
-//
-//
-//        // Need to create one of these fancy ArrayAdapter thingies, and specify the generic layout
-//        // for the widget itself.
-//        try {
-//
-//            //TODO Priority: hide item list in cam view
-//            ArrayAdapter<String> adapter;
-//            //Get asset file for first time user.
-//            AssetManager man = getAssets();
-//            //TODO Priority: add Splode Gallery file to list without crashing
-//            String[] mMovieString = prepend(MiscUtils.getFiles(mSharedData.mVideoFolder, "*.mp4"),"");//MiscUtils.getFiles(getFilesDir(), "*.mp4");
-//            if(mMovieString.length > 1) {
-//                mMovieFiles = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, mMovieString);
-//                mSharedData.useAssets = false;
-//            }
-//            else {
-//                //mMovieString = prepend(man.list("samples"),"samples/");//man.list("samples");
-//                mMovieString = prepend(man.list("empty"),"/");//man.list("samples");
-//                mMovieFiles = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, mMovieString);
-//                mSharedData.useAssets = true;
-//            }
-//            //mMovieFiles.addAll(mMovieString);
-//
-//            mSelectedMovie = -1;
-//            mMovieFiles.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-//            // Populate file-selection spinner.
-//            Spinner spinner = (Spinner) findViewById(R.id.playMovieFile_spinner);
-//            // Apply the adapter to the spinner.
-//            spinner.setAdapter(mMovieFiles);
-//            spinner.setOnItemSelectedListener(this);
-//            View v = spinner.getSelectedView();
-//            ((TextView)v).setTextColor(0xbc9e66);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//
-//        mVideoView.seek_bar = (SeekBar) findViewById(R.id.seek_bar);
-//        mVideoView.seek_bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-//            @Override
-//            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-//                if(fromUser)
-//                    mVideoView.seekTo(progress);
-//                int maxprogress = mVideoView.seek_bar.getMax();
-//                if(progress > maxprogress - 500) {
-//                    ImageButton toggleButton = (ImageButton) findViewById(R.id.button_play_pause);
-//                    toggleButton.setImageResource(R.mipmap.ic_pause);
-//                    PauseVideo();
-//                    stopRecording();
-//                    togglePlay = false;
-//                    showToast("stop");
-//                }
-//            }
-//            @Override
-//            public void onStartTrackingTouch(SeekBar seekBar) {
-//
-//            }
-//
-//            @Override
-//            public void onStopTrackingTouch(SeekBar seekBar) {
-//
-//            }
-//        });
+        //mVideoFile = new File(getFilesDir(), "fbo-gl-recording.mp4");
+
+
+        // Need to create one of these fancy ArrayAdapter thingies, and specify the generic layout
+        // for the widget itself.
+        try {
+
+            //TODO Priority: hide item list in cam view
+            ArrayAdapter<String> adapter;
+            //Get asset file for first time user.
+            AssetManager man = getAssets();
+            //TODO Priority: add Splode Gallery file to list without crashing
+            String[] mMovieString = prepend(MiscUtils.getFiles(mSharedData.mVideoFolder, "*.mp4"),"");//MiscUtils.getFiles(getFilesDir(), "*.mp4");
+            if(mMovieString.length > 1) {
+                mMovieFiles = new ArrayAdapter<String>(this, R.layout.splod_spinner, mMovieString);
+                mSharedData.useAssets = false;
+            }
+            else {
+                //mMovieString = prepend(man.list("samples"),"samples/");//man.list("samples");
+                mMovieString = prepend(man.list("empty"),"/");//man.list("samples");
+                mMovieFiles = new ArrayAdapter<String>(this, R.layout.splod_spinner, mMovieString);
+                mSharedData.useAssets = true;
+            }
+            //mMovieFiles.addAll(mMovieString);
+
+            mSelectedMovie = -1;
+            mMovieFiles.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            // Populate file-selection spinner.
+            Spinner spinner = (Spinner) findViewById(R.id.playMovieFile_spinner);
+            // Apply the adapter to the spinner.
+            spinner.setAdapter(mMovieFiles);
+            spinner.setOnItemSelectedListener(this);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        this.seekBar= (SeekBar) this.findViewById(R.id.seek_bar);
+        this.seekBar.setClickable(false);
+//        seekBar.setOnSeekBarChangeListener(mObserverSeekBar);
 
         //Pause on load activity to let everything load
         new CountDownTimer(500, 100) {
@@ -297,6 +276,7 @@ public class VideoActivity extends AppCompatActivity implements AdapterView.OnIt
     public void onPause() {
         if (DEBUG) Log.v(TAG, "onPause:");
         mVideoView.onPause();
+        threadHandler.removeCallbacks(updateSeekBarThread);
         super.onPause();
     }
 
@@ -304,6 +284,19 @@ public class VideoActivity extends AppCompatActivity implements AdapterView.OnIt
         Toast toast = Toast.makeText(this, message, Toast.LENGTH_SHORT);
         toast.setGravity(Gravity.LEFT, 0, 0);
         toast.show();
+    }
+
+    UpdateSeekBarThread updateSeekBarThread;
+    // Thread to Update position for SeekBar.
+    class UpdateSeekBarThread implements Runnable {
+
+        public void run()  {
+            int currentPosition = mVideoView.getCurrentPosition();
+
+            seekBar.setProgress(currentPosition);
+            // Delay thread 50 milisecond.
+            threadHandler.postDelayed(this, 50);
+        }
     }
 
     boolean toggleMenu = false;
@@ -323,8 +316,9 @@ public class VideoActivity extends AppCompatActivity implements AdapterView.OnIt
             mSharedData.VideoUpdate = true;
             StopVideo();
             if (!mSharedData.useAssets) {
-                String Galfile = "/" + mMovieFiles.getItem(mSelectedMovie);
-                mSharedData.galAddr = Uri.parse(mSharedData.mVideoFolder.getAbsolutePath() + Galfile);
+                String Galfile = mSharedData.mVideoFolder + "/" + mMovieFiles.getItem(mSelectedMovie);
+                File projDir = new File(Galfile);
+                mSharedData.galAddr = Uri.fromFile(projDir);
                 recordervideo = MiscUtils.getPath(this,mSharedData.galAddr);
             } else {
                 mSharedData.galAddr = null;
@@ -337,6 +331,7 @@ public class VideoActivity extends AppCompatActivity implements AdapterView.OnIt
     public void onNothingSelected(AdapterView<?> parent) {
 
     }
+
 
     /**
      * Global On click listener for all views in activity
@@ -393,12 +388,13 @@ public class VideoActivity extends AppCompatActivity implements AdapterView.OnIt
                 YoYo.with(Techniques.RotateIn).duration(700).playOn(findViewById(R.id.button_add));
 
             } else if (i == R.id.button_reset) {
-//                StopVideo();
-//                toggleButton = (ImageButton) findViewById(R.id.button_play_pause);
-//                toggleButton.setImageResource(R.mipmap.ic_pause);
-//                togglePlay = false;
-//                //TODO reset view to show start of video
-//                showToast("Reset");
+                ResetVideo();
+                toggleButton = (ImageButton) findViewById(R.id.button_play_pause);
+                toggleButton.setImageResource(R.mipmap.ic_pause);
+                togglePlay = false;
+                mSharedData.VideoUpdate = true;
+                //TODO reset view to show start of video
+                showToast("Reset");
                 YoYo.with(Techniques.RotateIn).duration(700).playOn(findViewById(R.id.button_reset));
 
             } else if (i == R.id.button_play_pause) {
@@ -414,6 +410,16 @@ public class VideoActivity extends AppCompatActivity implements AdapterView.OnIt
                         StartVideo();
                         togglePlay = true;
                         showToast("Play");
+
+                        // The duration in milliseconds
+                    int duration = mVideoView.getDuration();
+
+                    int currentPosition = mVideoView.getCurrentPosition();
+                    if(currentPosition== 0)
+                        seekBar.setMax(duration);
+                    // Create a thread to update position of SeekBar.
+                    updateSeekBarThread= new UpdateSeekBarThread();
+                    threadHandler.postDelayed(updateSeekBarThread,50);
                     }
                 }
                 YoYo.with(Techniques.RotateIn).duration(700).playOn(findViewById(R.id.button_play_pause));
@@ -719,6 +725,8 @@ public class VideoActivity extends AppCompatActivity implements AdapterView.OnIt
                 textView.setVisibility(View.VISIBLE);
                 textView.setText(getString(R.string.seekbar_corner_radius,
                         -progress));
+            } else if (i == R.id.seek_bar) {
+//                mVideoView.seekTo(progress);
             }
 //            mRenderer.requestRender();
         }
@@ -762,6 +770,7 @@ public class VideoActivity extends AppCompatActivity implements AdapterView.OnIt
             toggleButton.setImageResource(R.mipmap.ic_save);
             toggleButton.setColorFilter(0);	// return to default color
             showToast("Record Stop");
+            sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.parse(recordervideo)));
         }
     };
 
@@ -772,7 +781,7 @@ public class VideoActivity extends AppCompatActivity implements AdapterView.OnIt
         toggleButton.setImageResource(R.mipmap.ic_rec);
         toggleButton.setColorFilter(0xffff0000);	// turn red
         updateSharedData(mSharedData);
-
+        ResetVideo();
         Runnable runnable = new Runnable() {
             public void run() {
 
@@ -845,6 +854,7 @@ public class VideoActivity extends AppCompatActivity implements AdapterView.OnIt
             mVideoView.PlayVideo();
         }
         updateSharedData(mSharedData);
+
     }
 
     /**
@@ -853,6 +863,19 @@ public class VideoActivity extends AppCompatActivity implements AdapterView.OnIt
     public void PauseVideo() {
         if(mVideoView != null) {
             mVideoView.PauseVideo();
+        }
+    }
+
+    /**
+     * "reset" Video.
+     */
+    public void ResetVideo() {
+        if(mVideoView != null) {
+            mVideoView.ResetVideo();
+
+            // Create a thread to update position of SeekBar.
+            updateSeekBarThread= new UpdateSeekBarThread();
+            threadHandler.postDelayed(updateSeekBarThread,50);
         }
     }
 

@@ -5,10 +5,12 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -26,6 +28,7 @@ import android.widget.Toast;
 import com.daimajia.androidanimations.library.Techniques;
 import com.daimajia.androidanimations.library.YoYo;
 import com.tecrt.rowest.tecrtmedialib.CameraGLView;
+import com.tecrt.rowest.tecrtmedialib.MiscUtils;
 import com.tecrt.rowest.tecrtmedialib.encoder.MediaAudioEncoder;
 import com.tecrt.rowest.tecrtmedialib.encoder.MediaEncoder;
 import com.tecrt.rowest.tecrtmedialib.encoder.MediaMuxerWrapper;
@@ -80,6 +83,8 @@ public class CamActivity extends AppCompatActivity {
         setContentView(R.layout.activity_cam);
 
         boolean result= Utility.checkPermission(CamActivity.this);
+        //Get Gallery Folder or create it if doesnt exist
+        mSharedData.mVideoFolder = MiscUtils.createVideoFolder("Splode");
 
         Typeface face= Typeface.createFromAsset(getAssets(), "font/Gotham-Medium.ttf");
         TextView tv1=(TextView)findViewById(R.id.text_none);
@@ -177,6 +182,8 @@ public class CamActivity extends AppCompatActivity {
                 seekBar.setProgress(0);
             }
         }
+        //Get Gallery Folder or create it if doesnt exist
+        mSharedData.mVideoFolder = MiscUtils.createVideoFolder("Splode");
 
         //Pause on load activity to let everything load
         new CountDownTimer(500, 100) {
@@ -574,7 +581,7 @@ public class CamActivity extends AppCompatActivity {
         try {
             toggleButton.setImageResource(R.mipmap.ic_rec);
             toggleButton.setColorFilter(0xffff0000);	// turn red
-            mMuxer = new MediaMuxerWrapper(".mp4");	// if you record audio only, ".m4a" is also OK.
+            mMuxer = new MediaMuxerWrapper("Splode",".mp4");	// if you record audio only, ".m4a" is also OK.
             if (true) {
                 // for video capturing
                 new MediaVideoEncoder(mMuxer, mMediaEncoderListener, mCameraView.getVideoWidth(), mCameraView.getVideoHeight(),getResources(), mSharedData);
@@ -601,6 +608,7 @@ public class CamActivity extends AppCompatActivity {
         toggleButton.setImageResource(R.mipmap.ic_stop);
         toggleButton.setColorFilter(0);	// return to default color
         if (mMuxer != null) {
+            sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.parse(mMuxer.getOutputPath())));
             mMuxer.stopRecording();
             mMuxer = null;
             // you should not wait here
@@ -636,11 +644,21 @@ public class CamActivity extends AppCompatActivity {
                     Log.i(TAG, "CAMERA permission was NOT granted.");
                 }
                 break;
+            case Utility.REQUEST_WRITE_EXTERNAL_STORAGE_PERMISSION_RESULT:
+                if(grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(this,
+                            "Permission successfully granted!", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(this,
+                            "App needs to save video to run", Toast.LENGTH_SHORT).show();
+                }
+
         }
     }
 
     private static class Utility {
         public static final int MY_PERMISSIONS_REQUEST_CAMERA = 42;
+        public static final int REQUEST_WRITE_EXTERNAL_STORAGE_PERMISSION_RESULT = 123;
 
         @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
         public static boolean checkPermission(final Context context)
@@ -665,6 +683,25 @@ public class CamActivity extends AppCompatActivity {
 
                     } else {
                         ActivityCompat.requestPermissions((Activity) context, new String[]{Manifest.permission.CAMERA}, MY_PERMISSIONS_REQUEST_CAMERA);
+                    }
+                    return false;
+                } else if (ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                    if (ActivityCompat.shouldShowRequestPermissionRationale((Activity) context, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                        android.support.v7.app.AlertDialog.Builder alertBuilder = new android.support.v7.app.AlertDialog.Builder(context);
+                        alertBuilder.setCancelable(true);
+                        alertBuilder.setTitle("Permission necessary");
+                        alertBuilder.setMessage("write to storage is necessary");
+                        alertBuilder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                            @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
+                            public void onClick(DialogInterface dialog, int which) {
+                                ActivityCompat.requestPermissions((Activity) context, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_WRITE_EXTERNAL_STORAGE_PERMISSION_RESULT);
+                            }
+                        });
+                        android.support.v7.app.AlertDialog alert = alertBuilder.create();
+                        alert.show();
+
+                    } else {
+                        ActivityCompat.requestPermissions((Activity) context, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_WRITE_EXTERNAL_STORAGE_PERMISSION_RESULT);
                     }
                     return false;
                 } else {
