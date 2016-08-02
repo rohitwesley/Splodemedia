@@ -1,10 +1,8 @@
 package com.tecrt.rowest.splodemedia;
 
 import android.Manifest;
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -18,7 +16,6 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Message;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -776,43 +773,66 @@ public class VideoActivity extends AppCompatActivity implements AdapterView.OnIt
 
     public void RecVideo()
     {
+        if (Build.VERSION.SDK_INT >= 21) {
+            checkWriteStoragePermission();
+            ImageButton toggleButton = (ImageButton) findViewById(R.id.button_stop_rec);
+            toggleButton.setImageResource(R.mipmap.ic_rec);
+            toggleButton.setColorFilter(0xffff0000);    // turn red
+            updateSharedData(mSharedData);
+            ResetVideo();
+            Runnable runnable = new Runnable() {
+                public void run() {
 
-        ImageButton toggleButton = (ImageButton) findViewById(R.id.button_stop_rec);
-        toggleButton.setImageResource(R.mipmap.ic_rec);
-        toggleButton.setColorFilter(0xffff0000);	// turn red
-        updateSharedData(mSharedData);
-        ResetVideo();
-        Runnable runnable = new Runnable() {
-            public void run() {
 
-
-                ExtractDecodeEditEncodeMuxer test = new ExtractDecodeEditEncodeMuxer();
-                test.OUTPUT_FILENAME_DIR = mSharedData.mVideoFolder;
-                test.resource = getResources();
+                    ExtractDecodeEditEncodeMuxer test = new ExtractDecodeEditEncodeMuxer();
+                    test.OUTPUT_FILENAME_DIR = mSharedData.mVideoFolder;
+                    test.resource = getResources();
 //                test.setContext(VideoActivity.this);
-                try {
-                    if(mSharedData.galAddr!=null)
-                        test.testExtractDecodeEditEncodeMuxAudioVideo(mSharedData, VideoActivity.this);
-                    else
-                        test.testExtractDecodeEditEncodeMuxAudioVideo();
-                } catch (Throwable t) {
-                    t.printStackTrace();
+                    try {
+                        if (mSharedData.galAddr != null)
+                            test.testExtractDecodeEditEncodeMuxAudioVideo(mSharedData, VideoActivity.this);
+                        else
+                            test.testExtractDecodeEditEncodeMuxAudioVideo();
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                    }
+
+
+                    Message msg = handler.obtainMessage();
+                    Bundle bundle = new Bundle();
+                    String dateString = test.mOutputFile;
+                    bundle.putString("myKey", dateString);
+                    msg.setData(bundle);
+                    handler.sendMessage(msg);
+
                 }
 
+            };
 
-                Message msg = handler.obtainMessage();
-                Bundle bundle = new Bundle();
-                String dateString = test.mOutputFile;
-                bundle.putString("myKey", dateString);
-                msg.setData(bundle);
-                handler.sendMessage(msg);
+            Thread mythread = new Thread(runnable);
+            mythread.start();
+        }
+        else {
+            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+            alertDialogBuilder.setMessage("You need Android 5.0 or higher to activate this feature");
 
-            }
+            alertDialogBuilder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface arg0, int arg1) {
+                    Toast.makeText(VideoActivity.this,"Please upgrade your OS",Toast.LENGTH_LONG).show();
+                }
+            });
 
-        };
+//            alertDialogBuilder.setNegativeButton("No",new DialogInterface.OnClickListener() {
+//                @Override
+//                public void onClick(DialogInterface dialog, int which) {
+//                    finish();
+//                }
+//            });
 
-        Thread mythread = new Thread(runnable);
-        mythread.start();
+            AlertDialog alertDialog = alertDialogBuilder.create();
+            alertDialog.show();
+        }
     }
 
     /**
@@ -922,7 +942,7 @@ public class VideoActivity extends AppCompatActivity implements AdapterView.OnIt
                 builder.setItems(items, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int item) {
-                        boolean result= Utility.checkPermission(VideoActivity.this);
+                        boolean result = checkWriteStoragePermission();;
 
 //                if (items[item].equals("Take Photo")) {
 //                    userChoosenTask ="Take Photo";
@@ -1013,57 +1033,40 @@ public class VideoActivity extends AppCompatActivity implements AdapterView.OnIt
         }
     }
 
+    private static final int REQUEST_WRITE_EXTERNAL_STORAGE_PERMISSION_RESULT = 1;
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        switch (requestCode) {
-            case Utility.REQUEST_WRITE_EXTERNAL_STORAGE_PERMISSION_RESULT:
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-//                    if(userChoosenTask.equals("Take Photo"))
-//                        cameraIntent();
-//                    else
-                    if(userChoosenTask.equals("Choose from Library"))
-                        galleryIntent();
-                } else {
-                    //code for deny
-                }
-                break;
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if(requestCode == REQUEST_WRITE_EXTERNAL_STORAGE_PERMISSION_RESULT) {
+            if(grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+//                if(mIsRecording || mIsTimelapse) {
+//                    mIsRecording = true;
+//                    mRecordImageButton.setImageResource(R.mipmap.btn_video_busy);
+//                }
+                Toast.makeText(this,
+                        "Permission successfully granted!", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this,
+                        "App needs to save video to run", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
-    private static class Utility {
-        public static final int REQUEST_WRITE_EXTERNAL_STORAGE_PERMISSION_RESULT = 123;
-
-        @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-        public static boolean checkPermission(final Context context)
-        {
-            int currentAPIVersion = Build.VERSION.SDK_INT;
-            if(currentAPIVersion>= Build.VERSION_CODES.M)
-            {
-                if (ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                    if (ActivityCompat.shouldShowRequestPermissionRationale((Activity) context, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-                        android.support.v7.app.AlertDialog.Builder alertBuilder = new android.support.v7.app.AlertDialog.Builder(context);
-                        alertBuilder.setCancelable(true);
-                        alertBuilder.setTitle("Permission necessary");
-                        alertBuilder.setMessage("write to storage is necessary");
-                        alertBuilder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                            @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-                            public void onClick(DialogInterface dialog, int which) {
-                                ActivityCompat.requestPermissions((Activity) context, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_WRITE_EXTERNAL_STORAGE_PERMISSION_RESULT);
-                            }
-                        });
-                        android.support.v7.app.AlertDialog alert = alertBuilder.create();
-                        alert.show();
-
-                    } else {
-                        ActivityCompat.requestPermissions((Activity) context, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_WRITE_EXTERNAL_STORAGE_PERMISSION_RESULT);
-                    }
-                    return false;
-                } else {
-                    return true;
-                }
-            } else {
+    private boolean checkWriteStoragePermission() {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if(ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    == PackageManager.PERMISSION_GRANTED) {
                 return true;
+
+            } else {
+                if(shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                    Toast.makeText(this, "app needs to be able to save videos", Toast.LENGTH_SHORT).show();
+                }
+                requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_WRITE_EXTERNAL_STORAGE_PERMISSION_RESULT);
+                return false;
             }
+        } else {
+            return true;
         }
     }
 

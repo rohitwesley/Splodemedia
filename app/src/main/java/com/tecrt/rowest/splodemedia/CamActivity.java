@@ -1,10 +1,6 @@
 package com.tecrt.rowest.splodemedia;
 
 import android.Manifest;
-import android.annotation.TargetApi;
-import android.app.Activity;
-import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -14,7 +10,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -82,7 +77,6 @@ public class CamActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_cam);
 
-        boolean result= Utility.checkPermission(CamActivity.this);
         //Get Gallery Folder or create it if doesnt exist
         mSharedData.mVideoFolder = MiscUtils.createVideoFolder("Splode");
 
@@ -127,9 +121,11 @@ public class CamActivity extends AppCompatActivity {
         tv1.setTypeface(face);
         tv1.setTextColor(Color.parseColor("#bc9e66"));
 
-        mCameraView = (CameraGLView)findViewById(R.id.cameraView);
-        mCameraView.setVideoSize(mSharedData.videoWidth, mSharedData.videoHeight);
-        mCameraView.setOnClickListener(mOnClickListener);
+        if(checkCamera()) {
+            mCameraView = (CameraGLView) findViewById(R.id.cameraView);
+            mCameraView.setVideoSize(mSharedData.videoWidth, mSharedData.videoHeight);
+            mCameraView.setOnClickListener(mOnClickListener);
+        }
         mScaleModeView = (TextView)findViewById(R.id.scalemode_textview);
         updateScaleModeText();
 //        mRecordButton = (ImageButton)findViewById(R.id.button_stop_rec);
@@ -245,7 +241,7 @@ public class CamActivity extends AppCompatActivity {
                 YoYo.with(Techniques.RotateIn).duration(700).playOn(findViewById(R.id.button_camrotate));
 
             } else if (i == R.id.button_stop_rec) {
-                if (toggleRec && mMuxer == null) {
+                if (toggleRec && mMuxer == null && checkWriteStoragePermission()) {
                     toggleRec = false;
                     showToast("Record Start");
                     startRecording();
@@ -577,6 +573,7 @@ public class CamActivity extends AppCompatActivity {
      */
     private void startRecording() {
         if (DEBUG) Log.v(TAG, "startRecording:");
+
         ImageButton toggleButton = (ImageButton) findViewById(R.id.button_stop_rec);
         try {
             toggleButton.setImageResource(R.mipmap.ic_rec);
@@ -634,82 +631,74 @@ public class CamActivity extends AppCompatActivity {
         }
     };
 
+
+    private static final int REQUEST_CAMERA_PERMISSION_RESULT = 0;
+    private static final int REQUEST_WRITE_EXTERNAL_STORAGE_PERMISSION_RESULT = 1;
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        switch (requestCode) {
-            case Utility.MY_PERMISSIONS_REQUEST_CAMERA:
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Log.i(TAG, "CAMERA permission has now been granted. Showing preview.");
-                } else {
-                    Log.i(TAG, "CAMERA permission was NOT granted.");
-                }
-                break;
-            case Utility.REQUEST_WRITE_EXTERNAL_STORAGE_PERMISSION_RESULT:
-                if(grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Toast.makeText(this,
-                            "Permission successfully granted!", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(this,
-                            "App needs to save video to run", Toast.LENGTH_SHORT).show();
-                }
-
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if(requestCode == REQUEST_CAMERA_PERMISSION_RESULT) {
+            if(grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(getApplicationContext(),
+                        "Application will not run without camera services", Toast.LENGTH_SHORT).show();
+            }
+            if(grantResults[1] != PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(getApplicationContext(),
+                        "Application will not have audio on record", Toast.LENGTH_SHORT).show();
+            }
+        }
+        if(requestCode == REQUEST_WRITE_EXTERNAL_STORAGE_PERMISSION_RESULT) {
+            if(grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+//                if(mIsRecording || mIsTimelapse) {
+//                    mIsRecording = true;
+//                    mRecordImageButton.setImageResource(R.mipmap.btn_video_busy);
+//                }
+                Toast.makeText(this,
+                        "Permission successfully granted!", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this,
+                        "App needs to save video to run", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
-    private static class Utility {
-        public static final int MY_PERMISSIONS_REQUEST_CAMERA = 42;
-        public static final int REQUEST_WRITE_EXTERNAL_STORAGE_PERMISSION_RESULT = 123;
-
-        @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-        public static boolean checkPermission(final Context context)
-        {
-            int currentAPIVersion = Build.VERSION.SDK_INT;
-            if(currentAPIVersion>= Build.VERSION_CODES.M)
-            {
-                if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                    if (ActivityCompat.shouldShowRequestPermissionRationale((Activity) context, Manifest.permission.CAMERA)) {
-                        android.support.v7.app.AlertDialog.Builder alertBuilder = new android.support.v7.app.AlertDialog.Builder(context);
-                        alertBuilder.setCancelable(true);
-                        alertBuilder.setTitle("Permission necessary");
-                        alertBuilder.setMessage("Camera is necessary");
-                        alertBuilder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                            @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-                            public void onClick(DialogInterface dialog, int which) {
-                                ActivityCompat.requestPermissions((Activity) context, new String[]{Manifest.permission.CAMERA}, MY_PERMISSIONS_REQUEST_CAMERA);
-                            }
-                        });
-                        android.support.v7.app.AlertDialog alert = alertBuilder.create();
-                        alert.show();
-
-                    } else {
-                        ActivityCompat.requestPermissions((Activity) context, new String[]{Manifest.permission.CAMERA}, MY_PERMISSIONS_REQUEST_CAMERA);
-                    }
-                    return false;
-                } else if (ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                    if (ActivityCompat.shouldShowRequestPermissionRationale((Activity) context, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-                        android.support.v7.app.AlertDialog.Builder alertBuilder = new android.support.v7.app.AlertDialog.Builder(context);
-                        alertBuilder.setCancelable(true);
-                        alertBuilder.setTitle("Permission necessary");
-                        alertBuilder.setMessage("write to storage is necessary");
-                        alertBuilder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                            @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-                            public void onClick(DialogInterface dialog, int which) {
-                                ActivityCompat.requestPermissions((Activity) context, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_WRITE_EXTERNAL_STORAGE_PERMISSION_RESULT);
-                            }
-                        });
-                        android.support.v7.app.AlertDialog alert = alertBuilder.create();
-                        alert.show();
-
-                    } else {
-                        ActivityCompat.requestPermissions((Activity) context, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_WRITE_EXTERNAL_STORAGE_PERMISSION_RESULT);
-                    }
-                    return false;
-                } else {
+    private boolean checkCamera() {
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if(ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) ==
+                        PackageManager.PERMISSION_GRANTED) {
+//                    cameraManager.openCamera(mCameraId, mCameraDeviceStateCallback, mBackgroundHandler);
                     return true;
+                } else {
+                    if(shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)) {
+                        Toast.makeText(this,
+                                "Video app required access to camera", Toast.LENGTH_SHORT).show();
+                    }
+                    requestPermissions(new String[] {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO
+                    }, REQUEST_CAMERA_PERMISSION_RESULT);
+                    return false;
                 }
+
             } else {
+//                cameraManager.openCamera(mCameraId, mCameraDeviceStateCallback, mBackgroundHandler);
                 return true;
             }
+    }
+
+    private boolean checkWriteStoragePermission() {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if(ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    == PackageManager.PERMISSION_GRANTED) {
+                return true;
+
+            } else {
+                if(shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                    Toast.makeText(this, "app needs to be able to save videos", Toast.LENGTH_SHORT).show();
+                }
+                requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_WRITE_EXTERNAL_STORAGE_PERMISSION_RESULT);
+                return false;
+            }
+        } else {
+            return true;
         }
     }
 
