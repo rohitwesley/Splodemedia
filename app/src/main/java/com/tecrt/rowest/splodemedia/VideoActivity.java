@@ -3,6 +3,7 @@ package com.tecrt.rowest.splodemedia;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -766,10 +767,32 @@ public class VideoActivity extends AppCompatActivity implements AdapterView.OnIt
             ImageButton toggleButton = (ImageButton) findViewById(R.id.button_stop_rec);
             toggleButton.setImageResource(R.mipmap.ic_save);
             toggleButton.setColorFilter(0);	// return to default color
+            dismissLoadingDialog();
             showToast("Record Stop");
             sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.parse(recordervideo)));
         }
     };
+
+    private ProgressDialog progress;
+
+
+
+    public void showLoadingDialog() {
+
+        if (progress == null) {
+            progress = new ProgressDialog(this);
+            progress.setTitle("Video Recording");
+            progress.setMessage("Processing Video");
+        }
+        progress.show();
+    }
+
+    public void dismissLoadingDialog() {
+
+        if (progress != null && progress.isShowing()) {
+            progress.dismiss();
+        }
+    }
 
     public void RecVideo()
     {
@@ -780,6 +803,7 @@ public class VideoActivity extends AppCompatActivity implements AdapterView.OnIt
             toggleButton.setColorFilter(0xffff0000);    // turn red
             updateSharedData(mSharedData);
             ResetVideo();
+            showLoadingDialog();
             Runnable runnable = new Runnable() {
                 public void run() {
 
